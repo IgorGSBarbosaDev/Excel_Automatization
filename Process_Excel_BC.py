@@ -53,23 +53,20 @@ class ExcelProcessor:
         if 'Assunto Matrícula' not in df.columns:
             raise ValueError("A coluna 'Assunto Matrícula' não foi encontrada no arquivo Excel.")
 
-        # Inserir nova coluna na posição D (índice 3)
-        df.insert(3, 'Nova Coluna D', None)
+        # Inserir nova coluna na posição D (índice 3) com cabeçalho vazio
+        df.insert(3, '', None)
 
-        # Preencher a coluna D com a função INT aplicada à coluna 'Assunto Matrícula'
-        df['Nova Coluna D'] = df['Assunto Matrícula'].apply(
+        # Preencher a nova coluna (sem nome) com a função INT aplicada à coluna 'Assunto Matrícula'
+        df.iloc[:, 3] = df['Assunto Matrícula'].apply(
             lambda x: int(str(x).replace("T_", "")) if pd.notnull(x) and str(x).replace("T_", "").isdigit() else None
         )
 
-        # Substituir a coluna D pelos valores calculados (remover fórmulas)
-        df['Nova Coluna D'] = df['Nova Coluna D'].astype(object)
+        # Inserir nova coluna na posição AB (índice 27) com cabeçalho vazio
+        df.insert(27, '', None)
 
-        # Inserir nova coluna na posição AB (índice 27)
-        df.insert(27, 'Nova Coluna AB', None)
-
-        # Preencher a coluna AB com a concatenação das colunas 'Nome do proprietário atual' e 'Sobrenome do proprietário atual'
+        # Preencher a nova coluna (sem nome) com a concatenação das colunas 'Nome do proprietário atual' e 'Sobrenome do proprietário atual'
         if 'Nome do proprietário atual' in df.columns and 'Sobrenome do proprietário atual' in df.columns:
-            df['Nova Coluna AB'] = df.apply(
+            df.iloc[:, 27] = df.apply(
                 lambda row: f"{row['Nome do proprietário atual']} {row['Sobrenome do proprietário atual']}" 
                 if pd.notnull(row['Nome do proprietário atual']) and pd.notnull(row['Sobrenome do proprietário atual']) else None,
                 axis=1
@@ -77,8 +74,9 @@ class ExcelProcessor:
         else:
             raise ValueError("As colunas 'Nome do proprietário atual' e 'Sobrenome do proprietário atual' não foram encontradas no arquivo Excel.")
 
-        # Substituir a coluna AB pelos valores calculados (remover fórmulas)
-        df['Nova Coluna AB'] = df['Nova Coluna AB'].astype(object)
+        # Garantir que o arquivo de saída tenha a extensão correta
+        if not output_path.endswith('.xlsx'):
+            output_path += '.xlsx'
 
         # Salvar a planilha modificada
         df.to_excel(output_path, index=False, engine='openpyxl')
