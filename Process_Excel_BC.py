@@ -3,6 +3,26 @@ import openpyxl
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import os
+import win32com.client as win32
+
+def convert_xls_to_xlsx(input_file, output_file):
+    """
+    Converte um arquivo .xls para .xlsx usando o Microsoft Excel via pywin32.
+    """
+    excel = win32.gencache.EnsureDispatch('Excel.Application')
+    excel.Visible = False
+
+    try:
+        # Abrir o arquivo .xls
+        wb = excel.Workbooks.Open(input_file)
+
+        # Salvar como .xlsx
+        wb.SaveAs(output_file, FileFormat=51)  # 51 é o formato para .xlsx
+        wb.Close()
+    except Exception as e:
+        raise ValueError(f"Erro ao converter o arquivo .xls para .xlsx: {e}")
+    finally:
+        excel.Application.Quit()
 
 class ExcelProcessor:
     @staticmethod
@@ -13,13 +33,25 @@ class ExcelProcessor:
         # Verificar a extensão do arquivo de entrada
         file_extension = os.path.splitext(file_path)[1].lower()
 
-        # Escolher o mecanismo apropriado
+        # Converter .xls para .xlsx se necessário
         if file_extension == '.xls':
-            df = pd.read_excel(file_path, engine='xlrd')
-        elif file_extension == '.xlsx':
+            temp_output = file_path.replace('.xls', '.xlsx')
+            convert_xls_to_xlsx(file_path, temp_output)
+            file_path = temp_output
+            file_extension = '.xlsx'
+
+        # Escolher o mecanismo apropriado
+        if file_extension == '.xlsx':
             df = pd.read_excel(file_path, engine='openpyxl')
         else:
             raise ValueError("Formato de arquivo não suportado. Use arquivos .xls ou .xlsx.")
+
+        # Remover espaços extras dos nomes das colunas
+        df.columns = df.columns.str.strip()
+
+        # Verificar se a coluna 'C' existe
+        if 'C' not in df.columns:
+            raise ValueError("A coluna 'C' não foi encontrada no arquivo Excel.")
 
         # Inserir nova coluna na posição D (índice 3)
         df.insert(3, 'Nova Coluna D', None)
